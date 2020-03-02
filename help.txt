@@ -1,0 +1,85 @@
+#clone project repo
+git clone ...
+
+#Starting travis.yml file:
+sudo: false
+language: python
+python: 2.7
+install:
+- pip install codecov
+script:
+- coverage run tests.py
+after_success:
+- codecov
+
+#remove encrypted 
+delete deploy_rsa.enc
+
+#after the above changes
+commit these 2 files to github repo
+
+#run key command
+ssh-keygen -t rsa -b 4096 -C 'build@travis-ci.org' -f ./deploy_rsa  
+#press enter 2 times when prompted
+
+#generate travis info
+travis encrypt-file deploy_rsa --add  
+#press enter for yes
+
+#Check that travis online has the IV and KEY
+# do this by going to the travis website. Easy way is click checkmark below upload files on #github, clicking details, the build, more options on travis site, then settings
+#verify as well that this is in the .travis.yml file
+
+#Copy paste addons and onwards from Tom’s finished file, but modify the first 3 lines of before install to be the latest key values
+sudo: false
+ 
+language: python
+ 
+python: 2.7
+ 
+install:
+- pip install codecov
+ 
+script:
+- coverage run tests.py
+ 
+after_success: bash <(curl -s https://codecov.io/bash)
+ 
+addons:
+  ssh_known_hosts: moon.scs.ryerson.ca
+ 
+before_install:
+- openssl aes-256-cbc -K $encrypted_9601508af2a1_key -iv $encrypted_9601508af2a1_iv
+  -in deploy_rsa.enc -out /tmp/deploy_rsa -d
+- eval "$(ssh-agent -s)"
+- chmod 600 /tmp/deploy_rsa
+- ssh-add /tmp/deploy_rsa
+ 
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: rsync -r --delete-after --quiet
+    ${TRAVIS_BUILD_DIR}/index.html
+    ${DEPLOY_USER}@${DEPLOY_SERVER}:/home/${DEPLOY_DIR}
+  on:
+    branch: master
+ 
+#change the environment variables
+DEPLOY_USER = yourUserName
+DEPLOY_SERVER = moon.scs.ryerson.ca
+DEPLOY_DIR = /avm/courses/cps847/yourUserName
+
+#Now do another commit
+add .travis.yml deloy_rsa.enc 
+then commit
+
+# cat cmd
+cat deploy_rsa.pub >> ~/.ssh/authorized_keys  
+
+#Now push to branch
+push
+
+#To check deployment worked go to 
+/home/avm/courses/cps847/yourUserId
+
+Should show a index.html file in that directory
