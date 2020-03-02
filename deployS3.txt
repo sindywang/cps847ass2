@@ -1,0 +1,20 @@
+sudo: false
+
+language: python
+
+python: 2.7
+
+install:
+- pip install codecov
+
+script:
+- coverage run tests.py
+
+after_success: bash <(curl -s https://codecov.io/bash)
+
+deploy:
+  provider: s3
+  access_key_id: "YOUR AWS ACCESS KEY"
+  secret_access_key: "YOUR AWS SECRET KEY"
+  bucket: "BUCKET NAME"
+  local_dir: "FOLDER THE DEPLOYABLE IS IN"
